@@ -73,3 +73,8 @@ def test_tough_corner():
     letters, path = main('maps/tough_corner.txt')
     assert letters == "A"
     assert path == "@A---+|+--+||+---++--+x"
+
+def test_dummy():
+    letters, path = main('maps/dummy.txt')
+    assert letters == "DUMMY"
+    assert path == "@D---+|U+++U-----+MM++-Y-x"
