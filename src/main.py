@@ -198,7 +198,6 @@ def traverse(start_node: Node, nodes: Dict[Tuple[int, int], Node]) -> Sequence[N
         if current_node is None:
             raise ValueError("Node can't be None", visited)
         neighbours = expand_node(current_node=current_node, previous_node=visited[-1], nodes=nodes)
-        print(current_node, neighbours, visited[-1])
         if current_node == visited[-1]:
             break
         visited.append(current_node)
@@ -235,7 +234,6 @@ def main(file_path: str) -> Tuple[str, str]:
     :return: List of visited letters and list of full path chars
     """
     start_node, node_map = load_nodes(load_map_from_file(Path(file_path)))
-    print(node_map)
     nodes = traverse(start_node=start_node, nodes=node_map)
     visited_letter_nodes = set()
     visited_letters = []
