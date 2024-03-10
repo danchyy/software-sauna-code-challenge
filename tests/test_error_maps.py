@@ -21,6 +21,12 @@ def test_error_fork():
     assert "Fork" in str(err.value)
 
 
+def test_error_tough_fork():
+    with pytest.raises(ValueError) as err:
+        main('maps/err_tough_fork.txt')
+    assert "Fork" in str(err.value)
+
+
 def test_error_missing_start():
     with pytest.raises(ValueError) as err:
         main('maps/err_missing_start.txt')

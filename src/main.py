@@ -162,7 +162,21 @@ def corner_handler(
                 n.pos_x - current_node.pos_x == direction[0] and n.pos_y - current_node.pos_y == direction[1])
     ]
     if len(f_n) > 1:
-        raise ValueError("Fork in path")
+        # Check potential Fork
+        valid_n = []
+        for n in f_n:
+            # Check if corner neighbour nodes are valid -> they can either continue direction or turn right away
+            candidate_direction = (n.pos_x - current_node.pos_x, n.pos_y - current_node.pos_y)
+            if candidate_direction[0] != 0 and n.value == '|':
+                continue
+            if candidate_direction[1] != 0 and n.value == '-':
+                continue
+            valid_n.append(n)
+        if len(valid_n) > 1:
+            raise ValueError("Fork in path")
+        if len(valid_n) == 0:
+            raise ValueError("Fake turn")
+        return valid_n[0], (valid_n[0].pos_x - current_node.pos_x, valid_n[0].pos_y - current_node.pos_y)
     if len(f_n) == 0:
         raise ValueError("Fake turn")
     return f_n[0], (f_n[0].pos_x - current_node.pos_x, f_n[0].pos_y - current_node.pos_y)
