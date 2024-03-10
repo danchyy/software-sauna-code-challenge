@@ -8,6 +8,7 @@ def test_error_broken_path():
         main('maps/err_broken_path.txt')
     assert "Broken path" in str(err.value)
 
+
 def test_error_fake_turn():
     with pytest.raises(ValueError) as err:
         main('maps/err_fake_turn.txt')
@@ -54,3 +55,9 @@ def test_error_multiple_start_neighbours():
     with pytest.raises(ValueError) as err:
         main('maps/err_multiple_start_neighbours.txt')
     assert "Multiple starting paths" in str(err.value)
+
+
+def test_error_err_invalid_uppercase_intersection():
+    with pytest.raises(ValueError) as err:
+        main('maps/err_invalid_uppercase_intersection.txt')
+    assert "3 surrounding chars" in str(err.value)

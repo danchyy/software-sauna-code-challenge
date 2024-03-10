@@ -42,6 +42,9 @@ def load_nodes(str_map: List[str]) -> Tuple[Node, Dict[Tuple[int, int], Node]]:
     end_node_found = False
     for i in range(len(str_map)):
         for j in range(len(str_map[i])):
+            if str_map[i][j] == ' ':
+                continue
+            node_dict[(j, i)] = Node(value=str_map[i][j], pos_x=j, pos_y=i)
             if str_map[i][j] == _START_CHAR:
                 if start_node is not None:
                     raise ValueError("Multiple start characters")
@@ -49,7 +52,6 @@ def load_nodes(str_map: List[str]) -> Tuple[Node, Dict[Tuple[int, int], Node]]:
                 continue
             elif str_map[i][j] == _END_CHAR:
                 end_node_found = True
-            node_dict[(j, i)] = Node(value=str_map[i][j], pos_x=j, pos_y=i)
 
     if start_node is None:
         raise ValueError("Missing start character")
@@ -63,6 +65,15 @@ def expand_node(
         current_node: Node,
         nodes: Dict[Tuple[int, int], Node]
 ) -> List[Node]:
+    """
+    Collects all of the nodes except the previous ones as we never want to turn around (180 degrees) and return. This
+    sort of mechanism avoids the use of "visited" list other than to keep track of our path.
+
+    :param previous_node: Previously visited node
+    :param current_node: Current node
+    :param nodes: Entire map of nodes
+    :return: Neighbouring nodes
+    """
     pos_x, pos_y = current_node.pos_x, current_node.pos_y
     neighbours = [nodes.get((pos_x - 1, pos_y), None), nodes.get((pos_x + 1, pos_y), None),
                   nodes.get((pos_x, pos_y - 1), None), nodes.get((pos_x, pos_y + 1), None)]
@@ -71,6 +82,13 @@ def expand_node(
 
 
 def expand_start_node(start_node: Node, nodes: Dict[Tuple[int, int], Node]) -> Node:
+    """
+    Same as `expand_node` but just for the start case as it has some extra error handling.
+
+    :param start_node: Start node
+    :param nodes: Entire map of nodes
+    :return: Neighbouring nodes
+    """
     start_neighbours = expand_node(current_node=start_node, nodes=nodes, previous_node=start_node)
     if len(start_neighbours) == 0:
         raise ValueError("No neighbours for starting point")
@@ -79,34 +97,66 @@ def expand_start_node(start_node: Node, nodes: Dict[Tuple[int, int], Node]) -> N
     return start_neighbours[0]
 
 
-def handle_same_direction(
+def dash_handler(
         current_node: Node,
         nodes: Dict[Tuple[int, int], Node],
         direction: Tuple[int, int]
 ) -> Optional[Node]:
+    """
+    Handler which just takes the existing direction and returns the next node in that direction (left, right, up
+    or down). Returns None if there is no node at that position (which later throws an error).
+
+    :param current_node: Current Node
+    :param nodes: All Nodes on the map
+    :param direction: Direction of the path
+    :return: Next node or None
+    """
     next_position = (current_node.pos_x + direction[0], current_node.pos_y + direction[1])
     current_node = nodes.get(next_position, None)
     return current_node
 
 
-def handle_uppercase(
+def uppercase_handler(
         current_node: Node,
         nodes: Dict[Tuple[int, int], Node],
         neighbours: List[Node],
         direction: Tuple[int, int]
 ) -> Tuple[Node, Tuple[int, int]]:
-    if len(neighbours) > 1:
+    """
+    Handler which takes care of uppercase letter, it determines if we've reached an intersection - then takes the node
+    that follows the direction. If that's not the case then the letter should have only one neighbor and path should
+    continue with that node and direction.
+    :param current_node: Current node
+    :param nodes: All nodes on map
+    :param neighbours: Neighbouring nodes
+    :param direction: Direction of the path
+    :return: Next node and new direction
+    """
+    # TODO add more error handling - when len(neighbours) == 2 - that's an error
+    if len(neighbours) == 2:
+        raise ValueError("Found letter intersection with 3 surrounding chars - don't know what to do!")
+    if len(neighbours) == 3:
         # keep direction if crossroad
         next_position = (current_node.pos_x + direction[0], current_node.pos_y + direction[1])
         return nodes.get(next_position, None), direction
+    if len(neighbours) == 0:
+        raise ValueError("End of path - invalid map")
     return neighbours[0], (neighbours[0].pos_x - current_node.pos_x, neighbours[0].pos_y - current_node.pos_y)
 
 
-def handle_corner(
+def corner_handler(
         current_node: Node,
         neighbours: List[Node],
         direction: Tuple[int, int]
 ) -> Tuple[Node, Tuple[int, int]]:
+    """
+    Performs a turn by 90 degrees, if that's not possible it throws an error.
+
+    :param current_node: Current node
+    :param neighbours: Neighbouring nodes
+    :param direction: Direction of the path
+    :return: Next node and new direction
+    """
     f_n = [
         n for n in neighbours if not (
                 n.pos_x - current_node.pos_x == direction[0] and n.pos_y - current_node.pos_y == direction[1])
@@ -119,6 +169,14 @@ def handle_corner(
 
 
 def traverse(start_node: Node, nodes: Dict[Tuple[int, int], Node]) -> Sequence[Node]:
+    """
+    Function that iterates through the map by starting from first node, expanding its neighbours and checking if we
+    have a valid situation depending on the value of that node - if that's not satisfied than an error is thrown.
+
+    :param start_node: Starting node on the map - inferred from `load_nodes` map
+    :param nodes: Nodes that represent the map
+    :return: Final full path of the nodes
+    """
     visited = [start_node]
     current_node = expand_start_node(start_node, nodes)
     direction = (current_node.pos_x - start_node.pos_x, current_node.pos_y - start_node.pos_y)
@@ -126,6 +184,7 @@ def traverse(start_node: Node, nodes: Dict[Tuple[int, int], Node]) -> Sequence[N
         if current_node is None:
             raise ValueError("Node can't be None", visited)
         neighbours = expand_node(current_node=current_node, previous_node=visited[-1], nodes=nodes)
+        print(current_node, neighbours, visited[-1])
         if current_node == visited[-1]:
             break
         visited.append(current_node)
@@ -134,27 +193,35 @@ def traverse(start_node: Node, nodes: Dict[Tuple[int, int], Node]) -> Sequence[N
         if len(neighbours) == 0:
             raise ValueError("Broken path")
         if current_node.value.isupper():
-            current_node, direction = handle_uppercase(
+            current_node, direction = uppercase_handler(
                 current_node=current_node,
                 nodes=nodes,
                 neighbours=neighbours,
                 direction=direction
             )
+        elif current_node.value == _CORNER:
+            current_node, direction = corner_handler(
+                current_node=current_node,
+                neighbours=neighbours,
+                direction=direction
+            )
+        elif current_node.value in [_VERTICAL_DIRECTION, _HORIZONTAL_DIRECTION]:
+            current_node = dash_handler(current_node=current_node, direction=direction, nodes=nodes)
+            if current_node is None:
+                raise ValueError("Invalid corner")
         else:
-            if current_node.value == _CORNER:
-                current_node, direction = handle_corner(
-                    current_node=current_node,
-                    neighbours=neighbours,
-                    direction=direction
-                )
-            else:
-                current_node = handle_same_direction(current_node=current_node, direction=direction, nodes=nodes)
-                if current_node is None:
-                    raise ValueError("Invalid Corner")
+            raise ValueError("Invalid char")
 
 
 def main(file_path: str) -> Tuple[str, str]:
+    """
+    Main "wrapper" function
+
+    :param file_path: Path to the file
+    :return: List of visited letters and list of full path chars
+    """
     start_node, node_map = load_nodes(load_map_from_file(Path(file_path)))
+    print(node_map)
     nodes = traverse(start_node=start_node, nodes=node_map)
     visited_letter_nodes = set()
     visited_letters = []
