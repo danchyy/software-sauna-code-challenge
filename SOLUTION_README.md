@@ -37,7 +37,59 @@ Function that collects neighboring nodes.
 
 These functions are used to correctly perform a functionality that is tied to each different type of characters/tokens found along the map. We have `uppercase_handler`, `corner_handler` and `dash_handler`. 
 
-`uppercase_handler` determines whether the path needs to continue straight through or turn, the `corner_handler` function checks if we have a proper setup for turning 90 deegrees, if not it throws an error, and `dash_handler` is in charge of checking `-` and `|` chars and its appropriate errors.
+#### Corner Handler
+
+Function checks if we have a proper setup for turning 90 deegrees, if not it throws an exception for either:
+
+* Fork 
+* Fake Turn
+
+It also handles a complex situation which I thought it should be correct but wasn't mentioned in examples:
+
+```
+ -   @
+ +---D
+ |
+ x
+```
+
+When the path reaches `+` this shouldn't cause an error or exception since the right side
+(or up) of the corner contains an invalid sign. I'm not sure if that should be considered as an exception because
+it's an invalid map or if it should be okay because it doesn't obstruct the remainder of the path.
+
+So the solution for this situation would be: `@D---+|x`. I have more similar examples in my test maps:
+
+* dummy.txt
+* reverse.txt
+* tough_corner.txt
+* ultra_compact.txt
+
+#### Uppercase Handler 
+
+Determines whether the path needs to continue straight through or turn. The Uppercase chars
+should be handled either as `+` or `|`/`-`. I didn't add the same "complex corner" handling in situations
+such as: 
+
+```
+ +----+  @ 
+ P--+ +-M+ 
+    A------+
+        x  |
+        |  |
+        +--+
+          
+```
+
+Because in situation when we reach letter `M` we would have to look deep into the node-map
+to determine if the `-` below the `M` is just part of an intersection and thus a valid option/route (as in this situation)
+or if it's an invalid continutation, and we should keep the direction.
+
+It actually isn't that complicated to check that but we would simply need 
+
+
+#### Dash Handler
+
+In charge of checking `-` and `|` chars and its appropriate errors.
 
 
 

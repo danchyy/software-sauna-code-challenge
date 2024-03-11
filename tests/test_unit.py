@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from src.main import Node, expand_node, expand_start_node, corner_handler, uppercase_handler, load_map_from_file, \
-    load_nodes
+    load_nodes, Direction
 
 compact_node_map = {
     (1, 0): Node(value='+', pos_x=1, pos_y=0), (2, 0): Node(value='-', pos_x=2, pos_y=0),
@@ -53,9 +53,13 @@ def test_handle_corner_value():
     current_node = Node(value='+', pos_x=2, pos_y=2)
     previous_node = Node(value='B', pos_x=1, pos_y=2)
     neighbours = expand_node(previous_node=previous_node, current_node=current_node, nodes=compact_node_map)
-    new_node, direction = corner_handler(current_node=current_node, neighbours=neighbours, direction=(1, 0))
+    new_node, direction = corner_handler(
+        current_node=current_node,
+        neighbours=neighbours,
+        direction=Direction(x=1, y=0)
+    )
     assert new_node.pos_x == 2 and new_node.pos_y == 3 and new_node.value == '+'
-    assert direction[0] == 0 and direction[1] == 1
+    assert direction.x == 0 and direction.y == 1
 
 
 def test_handle_corner_value_error():
@@ -64,7 +68,7 @@ def test_handle_corner_value_error():
     previous_node = Node(value='+', pos_x=5, pos_y=0)
     neighbours = expand_node(previous_node=previous_node, current_node=current_node, nodes=compact_node_map)
     with pytest.raises(ValueError) as err:
-        _ = corner_handler(current_node=current_node, neighbours=neighbours, direction=(-1, 0))
+        _ = corner_handler(current_node=current_node, neighbours=neighbours, direction=Direction(x=-1, y=0))
     assert "Fork" in str(err.value)
 
 
@@ -72,20 +76,28 @@ def test_uppercase_handler():
     previous_node = Node(value='+', pos_x=1, pos_y=3)
     current_node = Node(value='B', pos_x=1, pos_y=2)
     neighbours = expand_node(previous_node=previous_node, current_node=current_node, nodes=compact_node_map)
-    new_node, direction = uppercase_handler(current_node=current_node, neighbours=neighbours, direction=(0, -1),
-                                            nodes=compact_node_map)
+    new_node, direction = uppercase_handler(
+        current_node=current_node,
+        neighbours=neighbours,
+        direction=Direction(x=0, y=-1),
+        nodes=compact_node_map
+    )
     assert new_node.pos_x == 1 and new_node.pos_y == 1 and new_node.value == '|'
-    assert direction[0] == 0 and direction[1] == -1
+    assert direction.x == 0 and direction.y == -1
 
 
 def test_dash_handler():
     current_node = Node(value='|', pos_x=1, pos_y=1)
     previous_node = Node(value='B', pos_x=1, pos_y=2)
     neighbours = expand_node(previous_node=previous_node, current_node=current_node, nodes=compact_node_map)
-    new_node, direction = uppercase_handler(current_node=current_node, neighbours=neighbours, direction=(0, -1),
-                                            nodes=compact_node_map)
+    new_node, direction = uppercase_handler(
+        current_node=current_node,
+        neighbours=neighbours,
+        direction=Direction(x=0, y=-1),
+        nodes=compact_node_map
+    )
     assert new_node.pos_x == 1 and new_node.pos_y == 0 and new_node.value == '+'
-    assert direction[0] == 0 and direction[1] == -1
+    assert direction.x == 0 and direction.y == -1
 
 
 def test_load_map():

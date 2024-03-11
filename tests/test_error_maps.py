@@ -73,3 +73,9 @@ def test_error_invalid_char():
     with pytest.raises(ValueError) as err:
         main('maps/err_invalid_char.txt')
     assert "Invalid char" in str(err.value)
+
+
+def test_error_tough():
+    with pytest.raises(ValueError) as err:
+        main('maps/err_tough.txt')
+    assert "problematic node" in str(err.value)

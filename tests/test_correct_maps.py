@@ -91,3 +91,9 @@ def test_ultra_compact():
     letters, path = main('maps/ultra_compact.txt')
     assert letters == "COMPACT"
     assert path == "@+++--+++|+----C+++|O+M-++----+P--+A--++--+++|C||Tx"
+
+
+def test_tough():
+    letters, path = main('maps/tough.txt')
+    assert letters == "TOUGH"
+    assert path == "@---|T--+|+---|-++-+|O||U+--+||-|-+--G|H-+|+--x"

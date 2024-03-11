@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List, Tuple, Dict, Sequence, Optional
 from argparse import ArgumentParser
 
-
 _START_CHAR = '@'
 _END_CHAR = 'x'
 _HORIZONTAL_DIRECTION = '-'
@@ -17,6 +16,12 @@ class Node:
     value: str
     pos_x: int
     pos_y: int
+
+
+@dataclass
+class Direction:
+    x: int
+    y: int
 
 
 def load_map_from_file(file_path: Path) -> List[str]:
@@ -60,6 +65,20 @@ def load_nodes(str_map: List[str]) -> Tuple[Node, Dict[Tuple[int, int], Node]]:
     return start_node, node_dict
 
 
+def check_orientation_valid(
+        current_node: Node,
+        direction: Direction,
+        nodes: Dict[Tuple[int, int], Node]
+) -> bool:
+    neighbours = expand_node(current_node=current_node, previous_node=current_node, nodes=nodes)
+    if ((direction.x != 0 and current_node.value == _VERTICAL_DIRECTION) or (
+            direction.y != 0 and current_node.value == _HORIZONTAL_DIRECTION
+    )) and len(neighbours) <= 2:
+        # Fake intersection, example situation: @--|--x
+        return False
+    return True
+
+
 def expand_node(
         previous_node: Node,
         current_node: Node,
@@ -78,7 +97,7 @@ def expand_node(
     neighbours = [nodes.get((pos_x - 1, pos_y), None), nodes.get((pos_x + 1, pos_y), None),
                   nodes.get((pos_x, pos_y - 1), None), nodes.get((pos_x, pos_y + 1), None)]
     return [n for n in neighbours if n is not None and n.value != ' ' and not (n.pos_y == previous_node.pos_y
-            and n.pos_x == previous_node.pos_x)]
+                                                                               and n.pos_x == previous_node.pos_x)]
 
 
 def expand_start_node(start_node: Node, nodes: Dict[Tuple[int, int], Node]) -> Node:
@@ -100,7 +119,7 @@ def expand_start_node(start_node: Node, nodes: Dict[Tuple[int, int], Node]) -> N
 def dash_handler(
         current_node: Node,
         nodes: Dict[Tuple[int, int], Node],
-        direction: Tuple[int, int]
+        direction: Direction,
 ) -> Optional[Node]:
     """
     Handler which just takes the existing direction and returns the next node in that direction (left, right, up
@@ -111,17 +130,19 @@ def dash_handler(
     :param direction: Direction of the path
     :return: Next node or None
     """
-    next_position = (current_node.pos_x + direction[0], current_node.pos_y + direction[1])
-    current_node = nodes.get(next_position, None)
-    return current_node
+    next_position = (current_node.pos_x + direction.x, current_node.pos_y + direction.y)
+    next_node = nodes.get(next_position, None)
+    if not check_orientation_valid(current_node=next_node, direction=direction, nodes=nodes):
+        raise ValueError("Reached a problematic node with wrong dash")
+    return next_node
 
 
 def uppercase_handler(
         current_node: Node,
         nodes: Dict[Tuple[int, int], Node],
         neighbours: List[Node],
-        direction: Tuple[int, int]
-) -> Tuple[Node, Tuple[int, int]]:
+        direction: Direction
+) -> Tuple[Node, Direction]:
     """
     Handler which takes care of uppercase letter, it determines if we've reached an intersection - then takes the node
     that follows the direction. If that's not the case then the letter should have only one neighbor and path should
@@ -132,23 +153,25 @@ def uppercase_handler(
     :param direction: Direction of the path
     :return: Next node and new direction
     """
-    # TODO add more error handling - when len(neighbours) == 2 - that's an error
     if len(neighbours) == 2:
         raise ValueError("Found letter intersection with 3 surrounding chars - don't know what to do!")
     if len(neighbours) == 3:
         # keep direction if crossroad
-        next_position = (current_node.pos_x + direction[0], current_node.pos_y + direction[1])
+        next_position = (current_node.pos_x + direction.x, current_node.pos_y + direction.y)
         return nodes.get(next_position, None), direction
     if len(neighbours) == 0:
         raise ValueError("End of path - invalid map")
-    return neighbours[0], (neighbours[0].pos_x - current_node.pos_x, neighbours[0].pos_y - current_node.pos_y)
+    return (
+        neighbours[0],
+        Direction(x=neighbours[0].pos_x - current_node.pos_x, y=neighbours[0].pos_y - current_node.pos_y)
+    )
 
 
 def corner_handler(
         current_node: Node,
         neighbours: List[Node],
-        direction: Tuple[int, int]
-) -> Tuple[Node, Tuple[int, int]]:
+        direction: Direction
+) -> Tuple[Node, Direction]:
     """
     Performs a turn by 90 degrees, if that's not possible it throws an error.
 
@@ -159,27 +182,27 @@ def corner_handler(
     """
     f_n = [
         n for n in neighbours if not (
-                n.pos_x - current_node.pos_x == direction[0] and n.pos_y - current_node.pos_y == direction[1])
+                n.pos_x - current_node.pos_x == direction.x and n.pos_y - current_node.pos_y == direction.y)
     ]
     if len(f_n) > 1:
         # Check potential Fork
         valid_n = []
         for n in f_n:
             # Check if corner neighbour nodes are valid -> they can either continue direction or turn right away
-            candidate_direction = (n.pos_x - current_node.pos_x, n.pos_y - current_node.pos_y)
-            if candidate_direction[0] != 0 and n.value == '|':
+            candidate_direction = Direction(x=n.pos_x - current_node.pos_x, y=n.pos_y - current_node.pos_y)
+            if candidate_direction.x != 0 and n.value == _VERTICAL_DIRECTION:
                 continue
-            if candidate_direction[1] != 0 and n.value == '-':
+            if candidate_direction.y != 0 and n.value == _HORIZONTAL_DIRECTION:
                 continue
             valid_n.append(n)
         if len(valid_n) > 1:
             raise ValueError("Fork in path")
         if len(valid_n) == 0:
             raise ValueError("Fake turn")
-        return valid_n[0], (valid_n[0].pos_x - current_node.pos_x, valid_n[0].pos_y - current_node.pos_y)
+        return valid_n[0], Direction(x=valid_n[0].pos_x - current_node.pos_x, y=valid_n[0].pos_y - current_node.pos_y)
     if len(f_n) == 0:
         raise ValueError("Fake turn")
-    return f_n[0], (f_n[0].pos_x - current_node.pos_x, f_n[0].pos_y - current_node.pos_y)
+    return f_n[0], Direction(x=f_n[0].pos_x - current_node.pos_x, y=f_n[0].pos_y - current_node.pos_y)
 
 
 def traverse(start_node: Node, nodes: Dict[Tuple[int, int], Node]) -> Sequence[Node]:
@@ -193,7 +216,7 @@ def traverse(start_node: Node, nodes: Dict[Tuple[int, int], Node]) -> Sequence[N
     """
     visited = [start_node]
     current_node = expand_start_node(start_node, nodes)
-    direction = (current_node.pos_x - start_node.pos_x, current_node.pos_y - start_node.pos_y)
+    direction = Direction(x=current_node.pos_x - start_node.pos_x, y=current_node.pos_y - start_node.pos_y)
     while True:
         if current_node is None:
             raise ValueError("Node can't be None", visited)
