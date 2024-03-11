@@ -115,3 +115,5 @@ This runs tests for all of the example maps that are given in the instruction te
 From the root folder simply call:
 
 `python .\src\main.py --path=.\maps\tough.txt`
+
+It prints out the output letters and path in the cmd.

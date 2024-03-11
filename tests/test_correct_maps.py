@@ -97,3 +97,15 @@ def test_tough():
     letters, path = main('maps/tough.txt')
     assert letters == "TOUGH"
     assert path == "@---|T--+|+---|-++-+|O||U+--+||-|-+--G|H-+|+--x"
+
+
+def test_no_letters():
+    letters, path = main('maps/twist.txt')
+    assert letters == "TWIST"
+    assert path == "@T-+++|+++-+|+W-----I-+|S|+--T-----x"
+
+
+def test_twist():
+    letters, path = main('maps/no_letters.txt')
+    assert letters == ""
+    assert path == "@----|-++-+||+--+|-|+-----x"
