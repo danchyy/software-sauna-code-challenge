@@ -57,6 +57,8 @@ def load_nodes(str_map: List[str]) -> Tuple[Node, Dict[Tuple[int, int], Node]]:
                 continue
             elif str_map[i][j] == _END_CHAR:
                 end_node_found = True
+            elif str_map[i][j] not in SPECIAL_CHARS and not str_map[i][j].isupper():
+                raise ValueError("Invalid char")
 
     if start_node is None:
         raise ValueError("Missing start character")
@@ -254,8 +256,6 @@ def traverse(start_node: Node, nodes: Dict[Tuple[int, int], Node]) -> Sequence[N
             current_node = dash_handler(current_node=current_node, direction=direction, nodes=nodes)
             if current_node is None:
                 raise ValueError("Invalid corner")
-        else:
-            raise ValueError("Invalid char")
 
 
 def main(file_path: str) -> Tuple[str, str]:
