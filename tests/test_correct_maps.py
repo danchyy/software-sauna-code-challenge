@@ -74,7 +74,20 @@ def test_tough_corner():
     assert letters == "A"
     assert path == "@A---+|+--+||+---++--+x"
 
+
 def test_dummy():
     letters, path = main('maps/dummy.txt')
     assert letters == "DUMMY"
     assert path == "@D---+|U+++U-----+MM++-Y-x"
+
+
+def test_reverse():
+    letters, path = main('maps/reverse.txt')
+    assert letters == "REVERSE"
+    assert path == "@----R-+|+-E-+|-V+++V+|E----R+-S||E--x"
+
+
+def test_ultra_compact():
+    letters, path = main('maps/ultra_compact.txt')
+    assert letters == "COMPACT"
+    assert path == "@+++--+++|+----C+++|O+M-++----+P--+A--++--+++|C||Tx"

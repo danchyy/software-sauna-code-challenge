@@ -67,3 +67,9 @@ def test_error_err_invalid_uppercase_intersection():
     with pytest.raises(ValueError) as err:
         main('maps/err_invalid_uppercase_intersection.txt')
     assert "3 surrounding chars" in str(err.value)
+
+
+def test_error_invalid_char():
+    with pytest.raises(ValueError) as err:
+        main('maps/err_invalid_char.txt')
+    assert "Invalid char" in str(err.value)
