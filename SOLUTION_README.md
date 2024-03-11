@@ -84,13 +84,14 @@ Because in situation when we reach letter `M` we would have to look deep into th
 to determine if the `-` below the `M` is just part of an intersection and thus a valid option/route (as in this situation)
 or if it's an invalid continutation, and we should keep the direction.
 
-It actually isn't that complicated to check that but we would simply need 
+It actually isn't that complicated to check that but we would simply need to recurse multiple times
+in order to check if that node is valid.
 
 
 #### Dash Handler
 
-In charge of checking `-` and `|` chars and its appropriate errors.
-
+In charge of checking `-` and `|` chars and its appropriate errors. Main exception check
+is to check that orientation of dashes is correct based on the direction of the path and surrounding nodes.
 
 
 ## Installation/Setup
@@ -109,3 +110,8 @@ pip install -r requirements.txt
 
 This runs tests for all of the example maps that are given in the instruction text for the task.
 
+## Run single map
+
+From the root folder simply call:
+
+`python .\src\main.py --path=.\maps\tough.txt`

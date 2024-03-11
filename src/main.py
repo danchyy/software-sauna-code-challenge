@@ -70,6 +70,15 @@ def check_orientation_valid(
         direction: Direction,
         nodes: Dict[Tuple[int, int], Node]
 ) -> bool:
+    """
+    Check if the orientation is valid for given '|' or '-'. It is invalid if there is a "one way".
+    Example situation: @--|--x
+
+    :param current_node: Current Node
+    :param direction: Direction of the path
+    :param nodes: All Nodes on the map
+    :return: True or False
+    """
     neighbours = expand_node(current_node=current_node, previous_node=current_node, nodes=nodes)
     if ((direction.x != 0 and current_node.value == _VERTICAL_DIRECTION) or (
             direction.y != 0 and current_node.value == _HORIZONTAL_DIRECTION
